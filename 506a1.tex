@@ -1,0 +1,944 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={506a1},
+  pdfauthor={Ruyue Jiang},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{506a1}
+\author{Ruyue Jiang}
+\date{}
+
+\begin{document}
+\maketitle
+
+\subsection{Quarto}\label{quarto}
+
+Quarto enables you to weave together content and executable code into a
+finished document. To learn more about Quarto see
+\url{https://quarto.org}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+-- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+v dplyr     1.1.4     v readr     2.1.5
+v forcats   1.0.0     v stringr   1.5.1
+v ggplot2   3.5.1     v tibble    3.2.1
+v lubridate 1.9.3     v tidyr     1.3.1
+v purrr     1.0.2     
+-- Conflicts ------------------------------------------ tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()
+i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\subsection{Problem 1}\label{problem-1}
+
+From \url{https://archive.ics.uci.edu/dataset/109/wine}, download the
+data set about wine. It contains two files of interest - ``wine.data''
+with the actual rectangular data set, and ``wine.names'' with some
+information about the data. (Both files are plain-text - you can open
+then in any text editor, including directly in RStudio.)
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  Import the data into a \texttt{data.frame} in R. Use the information
+  in the ``wine.names'' file to give appropriate column names. (Note:
+  Downloading and unzipping the file can take place outside of your
+  submitted document, but importing the file should be in the
+  submission.)
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{setwd}\NormalTok{(}\StringTok{"/Users/gracejiang/Downloads/wine"}\NormalTok{)}
+\NormalTok{wine\_data }\OtherTok{\textless{}{-}} \FunctionTok{read.table}\NormalTok{(}\StringTok{"wine.data"}\NormalTok{, }\AttributeTok{sep =} \StringTok{","}\NormalTok{, }\AttributeTok{header =} \ConstantTok{FALSE}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(wine\_data) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Class"}\NormalTok{, }\StringTok{"Alcohol"}\NormalTok{, }\StringTok{"Malic acid"}\NormalTok{, }\StringTok{"Ash"}\NormalTok{, }\StringTok{"Alcalinity of ash"}\NormalTok{, }\StringTok{"Magnesium"}\NormalTok{, }\StringTok{"Total phenols"}\NormalTok{, }\StringTok{"Flavanoids"}\NormalTok{, }\StringTok{"Nonflavanoid phenols"}\NormalTok{, }\StringTok{"Proanthocyanins"}\NormalTok{, }\StringTok{"Color intensity"}\NormalTok{, }\StringTok{"Hue"}\NormalTok{, }\StringTok{"OD280/OD315 of diluted wines"}\NormalTok{, }\StringTok{"Proline"}\NormalTok{)}
+\FunctionTok{head}\NormalTok{(wine\_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  Class Alcohol Malic acid  Ash Alcalinity of ash Magnesium Total phenols
+1     1   14.23       1.71 2.43              15.6       127          2.80
+2     1   13.20       1.78 2.14              11.2       100          2.65
+3     1   13.16       2.36 2.67              18.6       101          2.80
+4     1   14.37       1.95 2.50              16.8       113          3.85
+5     1   13.24       2.59 2.87              21.0       118          2.80
+6     1   14.20       1.76 2.45              15.2       112          3.27
+  Flavanoids Nonflavanoid phenols Proanthocyanins Color intensity  Hue
+1       3.06                 0.28            2.29            5.64 1.04
+2       2.76                 0.26            1.28            4.38 1.05
+3       3.24                 0.30            2.81            5.68 1.03
+4       3.49                 0.24            2.18            7.80 0.86
+5       2.69                 0.39            1.82            4.32 1.04
+6       3.39                 0.34            1.97            6.75 1.05
+  OD280/OD315 of diluted wines Proline
+1                         3.92    1065
+2                         3.40    1050
+3                         3.17    1185
+4                         3.45    1480
+5                         2.93     735
+6                         2.85    1450
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  The data contains information on three different classes of wine.
+  Check and report that the number of wines within each class is correct
+  as reported in ``wine.names''.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{wine\_number }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{group\_by}\NormalTok{(Class) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{count}\NormalTok{()}
+\NormalTok{wine\_number}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 3 x 2
+# Groups:   Class [3]
+  Class     n
+  <int> <int>
+1     1    59
+2     2    71
+3     3    48
+\end{verbatim}
+
+The number of wines within each class is correct as reported in
+``wine,names''. There are 59 in Class 1, 71 in Class 2 and 48 in Class
+3.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\item
+  Use the data to answer the following questions:
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \item
+    What is the correlation between alcohol content and color intensity?
+  \item
+    Which class has the highest correlation? Which has the lowest?
+  \item
+    What is the alcohol content of the wine with the highest color
+    intensity?
+  \item
+    What percentage of wines had a higher content of proanthocyanins
+    compare to ash?
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{corr1 }\OtherTok{\textless{}{-}} \FunctionTok{cor}\NormalTok{(wine\_data}\SpecialCharTok{$}\NormalTok{Alcohol, wine\_data}\SpecialCharTok{$}\StringTok{\textasciigrave{}}\AttributeTok{Color intensity}\StringTok{\textasciigrave{}}\NormalTok{)}
+\NormalTok{corr1}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 0.5463642
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{corr\_class }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} 
+                  \FunctionTok{group\_by}\NormalTok{(Class) }\SpecialCharTok{\%\textgreater{}\%} 
+                  \FunctionTok{summarize}\NormalTok{(}\FunctionTok{cor}\NormalTok{(Alcohol,}\StringTok{\textasciigrave{}}\AttributeTok{Color intensity}\StringTok{\textasciigrave{}}\NormalTok{))}
+\NormalTok{corr\_class}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 3 x 2
+  Class `cor(Alcohol, \`Color intensity\`)`
+  <int>                               <dbl>
+1     1                               0.408
+2     2                               0.270
+3     3                               0.350
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{highest\_value }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} 
+                 \FunctionTok{select}\NormalTok{(Alcohol, }\StringTok{\textasciigrave{}}\AttributeTok{Color intensity}\StringTok{\textasciigrave{}}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+                 \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Color intensity}\StringTok{\textasciigrave{}}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{head}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{highest\_value}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  Alcohol Color intensity
+1   14.34              13
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{wine\_percent }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{summarize}\NormalTok{(}\FunctionTok{mean}\NormalTok{(Proanthocyanins }\SpecialCharTok{\textgreater{}}\NormalTok{ Ash, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{))}
+\NormalTok{wine\_percent}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  mean(Proanthocyanins > Ash, na.rm = TRUE)
+1                                0.08426966
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Create a table identifying the average value of each variable,
+  providing one row for the overall average, and one row per class with
+  class averages. (This table does not need to be ``fancy'' but should
+  clearly identify what each value represents.)
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mean\_all }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} 
+            \FunctionTok{summarise\_all}\NormalTok{(mean) }\SpecialCharTok{\%\textgreater{}\%} 
+            \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Class =} \StringTok{"Overall"}\NormalTok{)}
+
+\NormalTok{mean\_by\_class }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data }\SpecialCharTok{\%\textgreater{}\%} 
+                 \FunctionTok{group\_by}\NormalTok{(Class) }\SpecialCharTok{\%\textgreater{}\%} 
+                 \FunctionTok{summarize\_all}\NormalTok{(mean) }\SpecialCharTok{\%\textgreater{}\%} 
+                 \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Class =} \FunctionTok{as.character}\NormalTok{(Class))}
+\NormalTok{table1 }\OtherTok{\textless{}{-}}  \FunctionTok{bind\_rows}\NormalTok{(mean\_all, mean\_by\_class)}
+\NormalTok{table1}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+    Class  Alcohol Malic acid      Ash Alcalinity of ash Magnesium
+1 Overall 13.00062   2.336348 2.366517          19.49494  99.74157
+2       1 13.74475   2.010678 2.455593          17.03729 106.33898
+3       2 12.27873   1.932676 2.244789          20.23803  94.54930
+4       3 13.15375   3.333750 2.437083          21.41667  99.31250
+  Total phenols Flavanoids Nonflavanoid phenols Proanthocyanins Color intensity
+1      2.295112  2.0292697            0.3618539        1.590899        5.058090
+2      2.840169  2.9823729            0.2900000        1.899322        5.528305
+3      2.258873  2.0808451            0.3636620        1.630282        3.086620
+4      1.678750  0.7814583            0.4475000        1.153542        7.396250
+        Hue OD280/OD315 of diluted wines   Proline
+1 0.9574494                     2.611685  746.8933
+2 1.0620339                     3.157797 1115.7119
+3 1.0562817                     2.785352  519.5070
+4 0.6827083                     1.683542  629.8958
+\end{verbatim}
+
+The first row of the table shows the average value of each variable. And
+the second to the forth row each shows the average value of each class
+of each variable.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  Carry out a series of t-tests to examine whether the level of phenols
+  differs across the three classes. Present the R output and interpret
+  the results. (You may use an existing R function to carry out the
+  t-test, or for \textbf{minor extra credit}, manually write your own
+  calculation of the t-test p-values.)
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{class1 }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data[wine\_data}\SpecialCharTok{$}\NormalTok{Class }\SpecialCharTok{==} \DecValTok{1}\NormalTok{, }\StringTok{"Total phenols"}\NormalTok{]}
+\NormalTok{class2 }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data[wine\_data}\SpecialCharTok{$}\NormalTok{Class }\SpecialCharTok{==} \DecValTok{2}\NormalTok{, }\StringTok{"Total phenols"}\NormalTok{]}
+\NormalTok{class3 }\OtherTok{\textless{}{-}}\NormalTok{ wine\_data[wine\_data}\SpecialCharTok{$}\NormalTok{Class }\SpecialCharTok{==} \DecValTok{3}\NormalTok{, }\StringTok{"Total phenols"}\NormalTok{]}
+
+\NormalTok{t\_test\_1\_2 }\OtherTok{\textless{}{-}} \FunctionTok{t.test}\NormalTok{(class1, class2)}
+\NormalTok{t\_test\_1\_3 }\OtherTok{\textless{}{-}} \FunctionTok{t.test}\NormalTok{(class1, class3)}
+\NormalTok{t\_test\_2\_3 }\OtherTok{\textless{}{-}} \FunctionTok{t.test}\NormalTok{(class2, class3)}
+
+\NormalTok{t\_test\_1\_2}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+
+    Welch Two Sample t-test
+
+data:  class1 and class2
+t = 7.4206, df = 119.14, p-value = 1.889e-11
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.4261870 0.7364055
+sample estimates:
+mean of x mean of y 
+ 2.840169  2.258873 
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t\_test\_1\_3}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+
+    Welch Two Sample t-test
+
+data:  class1 and class3
+t = 17.12, df = 98.356, p-value < 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 1.026801 1.296038
+sample estimates:
+mean of x mean of y 
+ 2.840169  1.678750 
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t\_test\_2\_3}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+
+    Welch Two Sample t-test
+
+data:  class2 and class3
+t = 7.0125, df = 116.91, p-value = 1.622e-10
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.4162855 0.7439610
+sample estimates:
+mean of x mean of y 
+ 2.258873  1.678750 
+\end{verbatim}
+
+Class1 vs Class2: The p-value = 1.889e-11, less than 0.05, meaning the
+difference in the level of Total phenols between class1 and class2 is
+statistically significant. Class1 has a higher mean level of phenols
+than class2.
+
+Class1 vs Class3: The p-value \textless{} 2.2e-16, meaning the
+difference in the level of Total phenols between class1 and class3 is
+statistically significant. Class1 has a higher mean level of phenols
+than class2.
+
+Class2 vs Class3: The p-value = 1.622e-10, less than 0.05, meaning the
+difference in the level of Total phenols between class1 and class2 is
+statistically significant. Class2 has a higher mean level of phenols
+than class3.
+
+\subsection{Problem 2}\label{problem-2}
+
+Please download
+\href{https://dept.stat.lsa.umich.edu/~jerrick/courses/stat506_f24/data/AskAManager.csv}{this
+dataset}. It is from an ongoing salary survey from AskAManager.org.
+We're going to do some data cleaning to prepare it for an analysis.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  Import the data into a \texttt{data.frame} in R. As with the wine
+  data, you may download the data outside of your submission, but
+  importation should take place inside the problem set submission.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Ask\_data }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"\textasciitilde{}/Downloads/AskAManager.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+New names:
+Rows: 28062 Columns: 19
+-- Column specification
+-------------------------------------------------------- Delimiter: "," chr
+(16): Timestamp, How.old.are.you., What.industry.do.you.work.in., Job.ti... dbl
+(3): ...1, What.is.your.annual.salary...You.ll.indicate.the.currency.in...
+i Use `spec()` to retrieve the full column specification for this data. i
+Specify the column types or set `show_col_types = FALSE` to quiet this message.
+* `` -> `...1`
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Clean up the variable names. Simplify them.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{colnames}\NormalTok{(Ask\_data) }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Number"}\NormalTok{,}\StringTok{"Time"}\NormalTok{,}\StringTok{"Age"}\NormalTok{,}\StringTok{"Working Industry"}\NormalTok{,}\StringTok{"Job title"}\NormalTok{,}\StringTok{"Job Additional Context"}\NormalTok{,}\StringTok{"Annual Salary"}\NormalTok{,}\StringTok{"Additional Compensation"}\NormalTok{,}\StringTok{"Currency"}\NormalTok{,}\StringTok{"Other Currency"}\NormalTok{,}\StringTok{"Income Additional Context"}\NormalTok{,}\StringTok{"Country"}\NormalTok{,}\StringTok{"US Working Location"}\NormalTok{,}\StringTok{"City"}\NormalTok{,}\StringTok{"Overall Work Experience"}\NormalTok{,}\StringTok{"Field Work Experience"}\NormalTok{,}\StringTok{"Education Level"}\NormalTok{,}\StringTok{"Gender"}\NormalTok{,}\StringTok{"Race"}\NormalTok{)}
+\NormalTok{valid\_columns }\OtherTok{\textless{}{-}} \FunctionTok{names}\NormalTok{(Ask\_data) }\SpecialCharTok{!=} \StringTok{""} \SpecialCharTok{\&} \SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(}\FunctionTok{names}\NormalTok{(Ask\_data))}
+\NormalTok{Ask\_data\_valid }\OtherTok{\textless{}{-}}\NormalTok{ Ask\_data[, valid\_columns]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Restrict the data to those being paid in US dollars (USD). Show that
+  it worked by confirming the number of observations before and after
+  restricting the data.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Ask\_data\_usd }\OtherTok{\textless{}{-}}\NormalTok{ Ask\_data\_valid }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(Currency }\SpecialCharTok{==} \StringTok{"USD"}\NormalTok{)}
+\FunctionTok{nrow}\NormalTok{(Ask\_data\_usd)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 23374
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{nrow}\NormalTok{(Ask\_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 28062
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Assume no one starts working before age 18. Eliminate any rows for
+  which their age, years of experience in their field, and years of
+  experience total are impossible. Again, confirm the number of
+  observations. (Hint: Making these variables \texttt{factor} may make
+  your life easier.)
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Ask\_data\_valid }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{select}\NormalTok{(Age) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{distinct}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 7 x 1
+  Age       
+  <chr>     
+1 25-34     
+2 45-54     
+3 35-44     
+4 18-24     
+5 65 or over
+6 55-64     
+7 under 18  
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Ask\_data\_valid }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{select}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Overall Work Experience}\StringTok{\textasciigrave{}}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{distinct}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 8 x 1
+  `Overall Work Experience`
+  <chr>                    
+1 5-7 years                
+2 8 - 10 years             
+3 2 - 4 years              
+4 21 - 30 years            
+5 11 - 20 years            
+6 1 year or less           
+7 41 years or more         
+8 31 - 40 years            
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Ask\_data\_valid }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{select}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Field Work Experience}\StringTok{\textasciigrave{}}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{distinct}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 8 x 1
+  `Field Work Experience`
+  <chr>                  
+1 5-7 years              
+2 2 - 4 years            
+3 21 - 30 years          
+4 11 - 20 years          
+5 1 year or less         
+6 8 - 10 years           
+7 31 - 40 years          
+8 41 years or more       
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{experience\_levels }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"1 year or less"}\NormalTok{, }\StringTok{"2 {-} 4 years"}\NormalTok{, }\StringTok{"5{-}7 years"}\NormalTok{, }\StringTok{"8 {-} 10 years"}\NormalTok{, }\StringTok{"11 {-} 20 years"}\NormalTok{, }\StringTok{"21 {-} 30 years"}\NormalTok{, }\StringTok{"31 {-} 40 years"}\NormalTok{, }\StringTok{"41 years or more"}\NormalTok{)}
+
+\NormalTok{Ask\_data\_18 }\OtherTok{\textless{}{-}}\NormalTok{ Ask\_data\_valid }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Age =} \FunctionTok{factor}\NormalTok{(Age),}\StringTok{\textasciigrave{}}\AttributeTok{Overall Work Experience}\StringTok{\textasciigrave{}} \OtherTok{=} \FunctionTok{factor}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Overall Work Experience}\StringTok{\textasciigrave{}}\NormalTok{, }\AttributeTok{levels =}\NormalTok{ experience\_levels, }\AttributeTok{ordered =} \ConstantTok{TRUE}\NormalTok{),}\StringTok{\textasciigrave{}}\AttributeTok{Field Work Experience}\StringTok{\textasciigrave{}} \OtherTok{=} \FunctionTok{factor}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Field Work Experience}\StringTok{\textasciigrave{}}\NormalTok{, }\AttributeTok{levels =}\NormalTok{ experience\_levels, }\AttributeTok{ordered =} \ConstantTok{TRUE}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(Age }\SpecialCharTok{!=} \StringTok{"under 18"}\NormalTok{)}
+
+\NormalTok{Ask\_data\_cleaned }\OtherTok{\textless{}{-}}\NormalTok{ Ask\_data\_18 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Field Work Experience}\StringTok{\textasciigrave{}} \SpecialCharTok{\textless{}=} \StringTok{\textasciigrave{}}\AttributeTok{Overall Work Experience}\StringTok{\textasciigrave{}}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  A lot of the incomes are likely false. Eliminate any rows with
+  extremely low or extremely high salaries. I'll leave the decision of
+  what thresholds to use up to you; you could choose to eliminate only
+  impossible values, or you could restrict the sample to eliminate the
+  extreme values even if they are realistic (e.g.~removing the
+  billionaires or the folks making \textless{} \$1,000 per year). You
+  must justify your choice, along with either a cited source or an
+  exploration the data, or some combination.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{low\_income\_threshold }\OtherTok{\textless{}{-}} \DecValTok{1000}
+\NormalTok{high\_income\_threshold }\OtherTok{\textless{}{-}} \DecValTok{1000000}
+\NormalTok{filtered\_data }\OtherTok{\textless{}{-}}\NormalTok{ Ask\_data\_cleaned }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\StringTok{\textasciigrave{}}\AttributeTok{Annual Salary}\StringTok{\textasciigrave{}} \SpecialCharTok{\textgreater{}=}\NormalTok{ low\_income\_threshold }\SpecialCharTok{\&} \StringTok{\textasciigrave{}}\AttributeTok{Annual Salary}\StringTok{\textasciigrave{}} \SpecialCharTok{\textless{}=}\NormalTok{ high\_income\_threshold)}
+\NormalTok{filtered\_data}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+# A tibble: 27,614 x 19
+   Number Time       Age   `Working Industry` `Job title` Job Additional Conte~1
+    <dbl> <chr>      <fct> <chr>              <chr>       <chr>                 
+ 1      1 4/27/2021~ 25-34 Education (Higher~ Research a~ <NA>                  
+ 2      2 4/27/2021~ 25-34 Computing or Tech  Change & I~ <NA>                  
+ 3      3 4/27/2021~ 25-34 Accounting, Banki~ Marketing ~ <NA>                  
+ 4      4 4/27/2021~ 25-34 Nonprofits         Program Ma~ <NA>                  
+ 5      5 4/27/2021~ 25-34 Accounting, Banki~ Accounting~ <NA>                  
+ 6      6 4/27/2021~ 25-34 Education (Higher~ Scholarly ~ <NA>                  
+ 7      7 4/27/2021~ 25-34 Publishing         Publishing~ <NA>                  
+ 8      8 4/27/2021~ 25-34 Education (Primar~ Librarian   High school, FT       
+ 9      9 4/27/2021~ 45-54 Computing or Tech  Systems An~ Data developer/ETL De~
+10     10 4/27/2021~ 35-44 Accounting, Banki~ Senior Acc~ <NA>                  
+# i 27,604 more rows
+# i abbreviated name: 1: `Job Additional Context`
+# i 13 more variables: `Annual Salary` <dbl>, `Additional Compensation` <dbl>,
+#   Currency <chr>, `Other Currency` <chr>, `Income Additional Context` <chr>,
+#   Country <chr>, `US Working Location` <chr>, City <chr>,
+#   `Overall Work Experience` <ord>, `Field Work Experience` <ord>,
+#   `Education Level` <chr>, Gender <chr>, Race <chr>
+\end{verbatim}
+
+The sample size is 27614 now.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  (Optional) If you want to see this analysis through for \emph{no
+  credit}, answer the research question of whether there is a
+  statistical association between education and salary, controlling for
+  years of experience.
+\end{enumerate}
+
+\subsection{Problem 3}\label{problem-3}
+
+Palindromic numbers are integers that are equal to the reverse of their
+digits. For example, 59195 is palindromic, whereas 59159 is not.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\item
+  Write function \texttt{isPalindromic} that checks if a given positive
+  integer is a palindrome. Be sure to provide a reasonable error on an
+  invalid input. Be sure to document your function (see instructions
+  above).
+
+  \begin{itemize}
+  \item
+    Input: A positive integer
+  \item
+    Output: A list with two elements:
+
+    \begin{itemize}
+    \item
+      \texttt{isPalindromic}: A logical value indicating if the input is
+      palindromic.
+    \item
+      \texttt{reversed}: The input with its digits reversed.
+    \end{itemize}
+  \end{itemize}
+
+  E.g.,
+
+\begin{verbatim}
+> isPalindromic(728827)
+$isPalindromic
+[1] TRUE
+
+$reversed
+[1] 728827
+
+> isPalindromic(39951)
+$isPalindromic
+[1] FALSE
+
+$reversed
+[1] 15993
+\end{verbatim}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{isPalindromic }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(n) \{}
+  \ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{is.numeric}\NormalTok{(n) }\SpecialCharTok{||}\NormalTok{ n }\SpecialCharTok{\textless{}=} \DecValTok{0} \SpecialCharTok{||}\NormalTok{ n }\SpecialCharTok{!=} \FunctionTok{as.integer}\NormalTok{(n)) \{}
+    \FunctionTok{stop}\NormalTok{(}\StringTok{"Error: Input must be a positive integer."}\NormalTok{)}
+\NormalTok{  \}}
+  
+\NormalTok{  n\_str }\OtherTok{\textless{}{-}} \FunctionTok{as.character}\NormalTok{(n)}
+  
+\NormalTok{  reversed\_str }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}\FunctionTok{rev}\NormalTok{(}\FunctionTok{strsplit}\NormalTok{(n\_str, }\ConstantTok{NULL}\NormalTok{)[[}\DecValTok{1}\NormalTok{]]), }\AttributeTok{collapse =} \StringTok{""}\NormalTok{)}
+  
+\NormalTok{  is\_palindromic }\OtherTok{\textless{}{-}}\NormalTok{ n\_str }\SpecialCharTok{==}\NormalTok{ reversed\_str}
+  
+  \FunctionTok{return}\NormalTok{(}\FunctionTok{list}\NormalTok{(}\AttributeTok{isPalindromic =}\NormalTok{ is\_palindromic, }\AttributeTok{reversed =} \FunctionTok{as.integer}\NormalTok{(reversed\_str)))}
+\NormalTok{\}}
+
+\FunctionTok{print}\NormalTok{(}\FunctionTok{isPalindromic}\NormalTok{(}\DecValTok{728827}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+$isPalindromic
+[1] TRUE
+
+$reversed
+[1] 728827
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\FunctionTok{isPalindromic}\NormalTok{(}\DecValTok{39951}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+$isPalindromic
+[1] FALSE
+
+$reversed
+[1] 15993
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\item
+  Create a function \texttt{nextPalindrome} that finds the next
+  palindromic number strictly greater than the input. Be sure to provide
+  a reasonable error on an invalid input.
+
+  \begin{itemize}
+  \item
+    Input: A positive integer
+  \item
+    Output: A vector of length 1 with the next palindromic number
+    greater than the input
+  \end{itemize}
+
+  E.g.,
+
+\begin{verbatim}
+> nextPalindrome(7152)
+[1] 7227
+
+> nextPalindrome(765431537)
+[1] 765434567
+\end{verbatim}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{isPalindromic }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(n) \{}
+\NormalTok{  n\_str }\OtherTok{\textless{}{-}} \FunctionTok{as.character}\NormalTok{(n)}
+\NormalTok{  reversed\_str }\OtherTok{\textless{}{-}} \FunctionTok{paste}\NormalTok{(}\FunctionTok{rev}\NormalTok{(}\FunctionTok{strsplit}\NormalTok{(n\_str, }\ConstantTok{NULL}\NormalTok{)[[}\DecValTok{1}\NormalTok{]]), }\AttributeTok{collapse =} \StringTok{""}\NormalTok{)}
+  \FunctionTok{return}\NormalTok{(n\_str }\SpecialCharTok{==}\NormalTok{ reversed\_str)}
+\NormalTok{\}}
+
+\NormalTok{nextPalindrome }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(n) \{}
+  \ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{is.numeric}\NormalTok{(n) }\SpecialCharTok{||}\NormalTok{ n }\SpecialCharTok{\textless{}=} \DecValTok{0} \SpecialCharTok{||}\NormalTok{ n }\SpecialCharTok{!=} \FunctionTok{as.integer}\NormalTok{(n)) \{}
+    \FunctionTok{stop}\NormalTok{(}\StringTok{"Error: Input must be a positive integer."}\NormalTok{)}
+\NormalTok{  \}}
+  
+\NormalTok{  next\_n }\OtherTok{\textless{}{-}}\NormalTok{ n }\SpecialCharTok{+} \DecValTok{1}
+  \ControlFlowTok{while}\NormalTok{ (}\SpecialCharTok{!}\FunctionTok{isPalindromic}\NormalTok{(next\_n)) \{}
+\NormalTok{    next\_n }\OtherTok{\textless{}{-}}\NormalTok{ next\_n }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{  \}}
+  
+  \FunctionTok{return}\NormalTok{(next\_n)}
+\NormalTok{\}}
+
+\FunctionTok{print}\NormalTok{(}\FunctionTok{nextPalindrome}\NormalTok{(}\DecValTok{7152}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 7227
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\FunctionTok{nextPalindrome}\NormalTok{(}\DecValTok{765431537}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 765434567
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\item
+  Use these functions to find the next palindrome for each of the
+  following:
+
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \item
+    391
+  \item
+    9928
+  \item
+    19272719
+  \item
+    109
+  \item
+    2
+  \end{enumerate}
+\end{enumerate}
+
+Hints:
+
+\begin{itemize}
+\item
+  While there are mathematical ways to approach this (and you can if you
+  wish), string manipulation is fine.
+\item
+  Functions can \texttt{return} at any point, not just at the end of the
+  code.
+\item
+  Be sure to consider what happens with numbers ending in 0.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{numbers }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{391}\NormalTok{, }\DecValTok{9928}\NormalTok{, }\DecValTok{19272719}\NormalTok{, }\DecValTok{109}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+
+\NormalTok{next\_palindromes }\OtherTok{\textless{}{-}} \FunctionTok{sapply}\NormalTok{(numbers, nextPalindrome)}
+
+\NormalTok{next\_palindromes}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1]      393     9999 19277291      111        3
+\end{verbatim}
+
+
+
+\end{document}
