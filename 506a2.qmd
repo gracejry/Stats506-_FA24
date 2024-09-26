@@ -1,0 +1,308 @@
+---
+title: "506a2"
+format: html
+editor: visual
+author: Ruyue Jiang
+---
+
+repo link: <https://github.com/gracejry/Stats506-_FA24.git>
+
+## Problem 1
+
+Let’s play a dice game. It costs \$2 to play. You roll a single 6-sided die.
+
+-   On a roll of 3 or 5, you win twice your roll.
+
+-   On any other roll, you lose.
+
+The input and output should be:
+
+-   Input: The number of dice to roll.
+
+-   Output: Total winnings
+
+```         
+> play_dice(10)
+[1] 4
+
+> play_dice(10)
+[1] -2
+```
+
+-   Version 1: Implement this game using a loop.
+
+```{r}
+#' Play Dice Game - Loop Version
+#'
+#' This function simulates a dice game using a for-loop.
+#' If the roll is a 3 or 5, you win twice the value of the roll minus $2.
+#' If the roll is any other number, you lose $2.
+#' 
+#' @param n An integer representing the number of dice rolls.
+#'
+#' @return n integer representing the total winnings or losses.
+#' 
+play_dice_v1 <- function(n) {
+  total <- 0
+  for (i in 1:n) {
+    roll <- sample(1:6, 1)
+    if (roll %in% c(3, 5)) {
+      total <- total + (roll * 2 - 2)
+    } else {
+      total <- total - 2
+    }
+  }
+  return(total)
+}
+```
+
+-   Version 2: Implement this game using built-in R vectorized functions.
+
+```{r}
+#' Play Dice Game - Vectorized Version
+#'
+#' This function simulates a dice game using vectorized functions.
+#' The function processes all dice rolls at once, making it faster for large numbers of rolls.
+#' If the roll is a 3 or 5, you win twice the value of the roll minus $2.
+#' If the roll is any other number, you lose $2.
+#'
+#' @param n An integer representing the number of dice rolls.
+#'
+#' @return An integer representing the total winnings or losses.
+#'
+#' 
+play_dice_v2 <- function(n) {
+  rolls <- sample(1:6, n, replace = TRUE)
+  wins <- sum((rolls == 3 | rolls == 5) * (rolls * 2))
+  losses <- n * 2
+  return(wins - losses)
+}
+```
+
+-   Version 3: Implement this by rolling all the dice into one and collapsing the die rolls into a single `table()`. (Hint: Be careful indexing the table - what happens if you make a table of a single dice roll? You may need to look to other resources for how to solve this.)
+
+```{r}
+#' Play Dice Game - Table Version
+#'
+#' This function simulates a dice game using a `table()` to aggregate the dice rolls.
+#' Firstly, it creates a frequency table of the rolls.
+#' Then it calculates winnings or losses based on the number of 3's and 5's rolled.
+#' If the roll is a 3 or 5, you win twice the value of the roll minus $2.
+#' If the roll is any other number, you lose $2.
+#'
+#' @param n An integer representing the number of dice rolls.
+#'
+#' @return An integer representing the total winnings or losses.
+#'
+#'
+play_dice_v3 <- function(n) {
+  rolls <- sample(1:6, n, replace = TRUE)
+  roll_table <- table(factor(rolls, levels = 1:6))
+  wins <- sum(roll_table[c(3, 5)] * c(6, 10))
+  losses <- n * 2
+  return(wins - losses)
+}
+```
+
+-   Version 4: Implement this game by using one of the “`apply`” functions.
+
+```{r}
+#' Play Dice Game - Apply Function Version
+#'
+#' This function simulates a dice game using the `sapply()` function.
+#' For each roll, it calculates the result and then sums the total winnings.
+#' If the roll is a 3 or 5, you win twice the value of the roll minus $2.
+#' If the roll is any other number, you lose $2.
+#' 
+#' @param n An integer representing the number of dice rolls.
+#'
+#' @return An integer representing the total winnings or losses.
+#' 
+#'
+play_dice_v4 <- function(n) {
+  rolls <- sample(1:6, n, replace = TRUE)
+  results <- sapply(rolls, function(roll) {
+    if (roll %in% c(3, 5)) roll * 2 - 2 else -2
+  })
+  return(sum(results))
+}
+```
+
+b.  Demonstrate that all versions work. Do so by running each a few times, once with an input a 3, and once with an input of 3,000.
+
+```{r}
+test_raw <- function(n) {
+  cat("Testing with n =", n, "\n")
+  cat("Version 1:", play_dice_v1(n), "\n")
+  cat("Version 2:", play_dice_v2(n), "\n")
+  cat("Version 3:", play_dice_v3(n), "\n")
+  cat("Version 4:", play_dice_v4(n), "\n")
+  cat("\n")
+}
+test_raw(3)
+test_raw(3000)
+```
+
+c.  Demonstrate that the four versions give the same result. Test with inputs 3 and 3,000. (You will need to add a way to control the randomization.)
+
+```{r}
+test_seed <- function(n) {
+  cat("Testing with n =", n, "\n")
+  set.seed(1234)
+  cat("Version 1:", play_dice_v1(n), "\n")
+  set.seed(1234)
+  cat("Version 2:", play_dice_v2(n), "\n")
+  set.seed(1234)
+  cat("Version 3:", play_dice_v3(n), "\n")
+  set.seed(1234)
+  cat("Version 4:", play_dice_v4(n), "\n")
+  cat("\n")
+}
+
+test_seed(3)
+test_seed(3000)
+
+```
+
+Based on the output, we can clearly see that the four versions give the same result.
+
+d.  Use the *microbenchmark* package to clearly demonstrate the speed of the implementations. Compare performance with a low input (1,000) and a large input (100,000). Discuss the results
+
+```{r}
+library(microbenchmark)
+benchmark_low <- microbenchmark(
+  v1 = play_dice_v1(1000),
+  v2 = play_dice_v2(1000),
+  v3 = play_dice_v3(1000),
+  v4 = play_dice_v4(1000),
+  times = 100
+)
+
+benchmark_high <- microbenchmark(
+  v1 = play_dice_v1(100000),
+  v2 = play_dice_v2(100000),
+  v3 = play_dice_v3(100000),
+  v4 = play_dice_v4(100000),
+  times = 100
+)
+
+print(benchmark_low)
+print(benchmark_high)
+
+```
+
+For both low and high inputs, Version 2 (vectorized) is the fastest, followed by Version 3 (table), then Version 4 (sapply), and finally Version 1 (loop) is the slowest. The performance difference is more pronounced with larger inputs. In conclusion, the vectorized approach (Version 2) provides the best performance, especially for larger inputs.
+
+e.  Do you think this is a fair game? Defend your decision with evidence based upon a Monte Carlo simulation.
+
+```{r}
+monte_carlo_simulation <- function(n_games, n_rolls) {
+  total_winnings <- replicate(n_games, play_dice_v2(n_rolls))
+  mean_winnings <- mean(total_winnings)
+  se_winnings <- sd(total_winnings) / sqrt(n_games)
+  
+  cat("Monte Carlo Simulation Results:\n")
+  cat("Number of games:", n_games, "\n")
+  cat("Number of rolls per game:", n_rolls, "\n")
+  cat("Mean winnings:", mean_winnings, "\n")
+}
+
+set.seed(1234)
+monte_carlo_simulation(10000, 100)
+```
+
+The game is not fair. A fair game would have an expected value of 0 (neither the player nor the house has an advantage. However, the mean winnings are not close to 0, meaning the game is not fair.
+
+## Problem 2
+
+Download the cars data set available at https://corgis-edu.github.io/corgis/csv/cars/. The goal is to examine the relationship between torque and highway gas mileage.
+
+a.  The names of the variables in this data are way too long. Rename the columns of the data to more reasonable lengths.
+
+```{r}
+library(tidyverse)
+cars <- read_csv("~/Downloads/cars.csv")
+colnames(cars) <- c("Height", "Length", "Width", "Driveline", "Engine Type", "Hybrid", "Forward Gears Number", "Transmission", "City mpg", "Fuel Type", "Highway mpg","Classification", "ID", "Maker", "Model Year", "Release Year", "Horsepower", "Torque")
+```
+
+b.  Restrict the data to cars whose Fuel Type is “Gasoline”.
+
+```{r}
+cars_clean <- cars %>% filter(`Fuel Type` == "Gasoline")
+```
+
+c.  Examine the distribution of highway gas mileage. Consider whether a transformation could be used. If so, generate the transformed variable and use this variable going forward. If not, provide a short justification.
+
+```{r}
+hist(cars_clean$`Highway mpg`, main = "Distribution of Highway MPG", xlab = "MPG", breaks = 30)
+```
+
+The distribution seems to be right skewed. So we need to make a transformation. Try to make a log transformation to the highway gas mileage vairable.
+
+```{r}
+cars_clean$log_Highway_mpg <- log(cars_clean$`Highway mpg`)
+hist(cars_clean$log_Highway_mpg, main = "Distribution of Log Highway MPG", xlab = "Log MPG", breaks = 30)
+```
+
+d.  Fit a linear regression model predicting MPG on the highway. The predictor of interest is torque. Control for:
+
+-   The horsepower of the engine
+
+-   All three dimensions of the car
+
+-   The year the car was released, as a categorical variable.
+
+    Briefly discuss the estimated relationship between torque and highway MPG. Be precise about the interpretation of the estimated coefficient.
+
+    ```{r}
+    model1 <- lm(log_Highway_mpg  ~ Torque + Horsepower + Length + Width + Height + factor(`Release Year`), data = cars_clean)
+
+    summary(model1)
+    ```
+
+    The coefficient for torque is -2.294e-03 , which indicates that for every additional unit increase in torque, the highway MPG is expected to decrease by -2.294e-03 units, holding all other variables (horsepower, dimensions, and release year) constant. This means that cars with higher torque generally tend to be less fuel-efficient on highways. And since the p-value for torque is extremely small, less than 2e-16, this coefficient is highly statistically significant.
+
+e.  It seems reasonable that there may be an interaction between torque and horsepower. Refit the model (with lm) and generate an interaction plot, showing how the relationship between torque and MPG changes as horsepower changes. Choose reasonable values of torque, and show lines for three different reasonable values of horsepower.
+
+(Hint: If you choose to use the interactions package for this, look at the at = argument to help with how year comes into play - choose a reasonable single value for year.
+
+```{r}
+model2 <- lm(log_Highway_mpg ~ Torque * Horsepower + Length + Width + Height + factor(`Release Year`), data = cars_clean)
+
+summary(model2)
+```
+
+```{r}
+#install.packages("interactions")
+library(interactions)
+#install.packages("emmeans")
+library(emmeans)
+summary(cars_clean$Horsepower)
+summary(cars_clean$Torque)
+interact_plot(model2,
+              pred = Torque, 
+              modx = Horsepower,
+              modx.values = c(185,267.5,317), #I choose the first quantile, the mean and the third quantile as the value, which can avoid the effect of outliers to the plot.
+              data = cars_clean, 
+              at = list(`Release Year` = "2010"),
+              main.title = "Interaction of Torque and Horsepower on Highway MPG",
+              y.label = "log(Highway MPG)",
+              x.label = "Torque")
+emmip(model2, Horsepower ~ Torque, 
+      at = list(Horsepower = c(185,267.5,317),
+                Torque = c(177,267.2,332))) #Also choose the first quantile, the mean and the third quantile as the values, which can avoid the effects of outliers to the plot.
+```
+
+There is a negative relationship between torque and highway MPG. As torque increases, MPG decreases (log), meaning higher torque reduces fuel efficiency. Cars with lower horsepower (185) see a steeper decline in MPG with increasing torque, while higher horsepower cars (317) are less affected by torque increases. And the interaction suggests that higher horsepower cars handle increased torque more efficiently, with less impact on MPG compared to lower horsepower cars.
+
+f.  Calculate $\hat{\beta}$ from d. manually (without using lm) by first creating a proper design matrix, then using matrix algebra to estimate $\beta$. Confirm that you get the same result as lm did prior.
+
+```{r}
+X <- model.matrix(model1)
+y <- cars_clean$log_Highway_mpg
+beta_manual <- solve(t(X) %*% X) %*% t(X) %*% y
+print(beta_manual)
+print(model1$coefficients)
+```
+
+Based on the output, we can see that they got the same result.
