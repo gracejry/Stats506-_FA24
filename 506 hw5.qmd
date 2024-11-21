@@ -1,0 +1,579 @@
+---
+title: "506 hw5"
+author: "Ruyue Jiang"
+format:
+  html:
+    embed-resources: true
+editor: visual
+execute:
+  error: true
+---
+
+repo link: <https://github.com/gracejry/Stats506-_FA24.git>
+
+## Problem 1
+
+Create a class to represent rational numbers (numbers of the form a/b for integers a and b). Do this using S4.
+
+a.  For the `rational` class, define the following:
+
+    1.  A constructor
+
+    2.  A validator that ensures the denominator is non-zero.
+
+    3.  A `show` method.
+
+    4.  A `simplify` method, to obtain the simplest form (e.g. `simplify(2/4)` produces `1/2`).
+
+    5.  A `quotient` method (e.g. `quotient(3/7)` produces `.42857143...`). It should support a `digits` argument *but only in the printing, not the returned result* (Hint: what does `print` return?).
+
+    6.  Addition, subtraction, multiplication, division. These should all return a `rational`.
+
+    7.  You’ll (probably) need [GCD](https://en.wikipedia.org/wiki/Greatest_common_divisor) and [LCM](https://en.wikipedia.org/wiki/Least_common_multiple) as part of some of these calculations; include these functions using **Rcpp**. Even if you don’t need these functions for another calculation, include them.
+
+```{r}
+#install.packages("Rcpp")
+library(Rcpp)
+
+cppFunction('
+#include <numeric>
+
+int gcd_r(int a, int b) {
+    a = abs(a);
+    b = abs(b);
+    return std::gcd(a, b);
+}
+
+int lcm_r(int a, int b) {
+    a = abs(a);
+    b = abs(b);
+    return abs(a * (b / std::gcd(a, b)));
+}
+')
+```
+
+```{r}
+#' Rational Number Class
+#'
+#' Represents rational numbers (fractions) with a numerator and a denominator.
+#' Includes a validator to ensure validity of the rational number.
+#'
+#' @slot numerator Numeric. The numerator of the fraction.
+#' @slot denominator Numeric. The denominator of the fraction (non-zero).
+#'
+#' @section Validation:
+#' - The denominator cannot be zero.
+#' - Both numerator and denominator must be numeric.
+#'
+# Define the "rational" S4 class
+setClass(
+    "rational",
+    slots = list(
+        numerator = "numeric",     # The numerator of the fraction
+        denominator = "numeric"   # The denominator of the fraction
+    ),
+    # Validation Function
+    validity = function(object) {
+        # Check if denominator is zero
+        if (object@denominator == 0) {
+            stop("Error: Denominator cannot be zero.")  # Stop execution if invalid
+        }
+        # Check if numerator and denominator are numeric
+        if (!is.numeric(object@numerator) || !is.numeric(object@denominator)) {
+            stop("Error: Both numerator and denominator must be numeric.")
+        }
+        TRUE  # Object is valid if all checks pass
+    }
+)
+```
+
+```{r}
+#' Create a Rational Number
+#'
+#' A constructor function to create objects of the "rational" S4 class.
+#' Automatically simplifies the fraction using the greatest common divisor (GCD).
+#'
+#' @param numerator Numeric. The numerator of the fraction.
+#' @param denominator Numeric. The denominator of the fraction. Must not be zero.
+#'
+#' @return An object of class "rational".
+#'
+createRational <- function(numerator, denominator) {
+    # Check for zero denominator
+    if (denominator == 0) stop("Error: Denominator cannot be zero.")
+    # Ensure denominator is positive
+    if (denominator < 0) {
+        numerator <- -numerator
+        denominator <- -denominator
+    }
+    # Skip simplification for zero numerator
+    if (numerator == 0) {
+        return(new("rational", numerator = numerator, denominator = denominator))
+    }
+    # Simplify the fraction
+    divisor <- gcd_r(numerator, denominator) # Find GCD of numerator and denominator
+    new("rational", numerator = numerator / divisor, denominator = denominator / divisor)
+}
+```
+
+```{r}
+#' Display a Rational Number
+#'
+#' A method to display an object of the "rational" class in a human-readable format.
+#'
+#' @param object An object of class "rational".
+#'
+#' @details
+#' - If the numerator of the rational number is zero, the output will display as "0 / denominator".
+#' - Otherwise, the output will display as "numerator/denominator".
+#'
+# Define the show method for "rational" class
+setMethod(
+    "show",
+    "rational",
+    function(object) {
+        if (object@numerator == 0) {
+            cat("0 /", object@denominator, "\n")  # Display as "0 / denominator"
+        } else {
+            cat(object@numerator, "/", object@denominator, "\n")  # Display as "numerator/denominator"
+        }
+    }
+)
+```
+
+```{r}
+#' Simplify a Rational Number
+#'
+#' Simplifies an object of the "rational" class to its lowest terms.
+#'
+#' @param r An object of class "rational".
+#'
+#' @return A new "rational" object that represents the simplified form of the input.
+#'
+#' @details
+#' The function simplifies a rational number by dividing the numerator and denominator by their greatest common divisor (GCD).
+#'
+# Function to simplify a rational number
+simplify <- function(r) {
+    divisor <- gcd_r(r@numerator, r@denominator)  # Find GCD of numerator and denominator
+    createRational(r@numerator / divisor, r@denominator / divisor)  # Return simplified object
+}
+```
+
+```{r}
+#' Arithmetic Operations for Rational Numbers
+#'
+#' Define addition, subtraction, multiplication, and division operations for objects of the "rational" class.
+#'
+#' @param e1 A rational number
+#' @param e2 A rational number
+#'
+#' @return A new "rational" object that represents the result of the operation, simplified to its lowest terms.
+#'
+#' @details
+#' The arithmetic operations are implemented using the following logic:
+#' - Addition: Computes a common denominator and adds the numerators.
+#' - Subtraction: Computes a common denominator and subtracts the numerators.
+#' - Multiplication: Multiplies the numerators and denominators directly.
+#' - Division: Multiplies the numerator of the first by the denominator of the second and vice versa. Division by zero is not allowed.
+#'
+#'
+# Addition of two rational numbers
+setMethod(
+    "+",
+    c("rational", "rational"),
+    function(e1, e2) {
+        # Compute new numerator and denominator
+        numerator <- e1@numerator * e2@denominator + e2@numerator * e1@denominator
+        denominator <- e1@denominator * e2@denominator
+        simplify(createRational(numerator, denominator)) # Simplify the result
+    }
+)
+
+# Subtraction of two rational numbers
+setMethod(
+    "-",
+    c("rational", "rational"),
+    function(e1, e2) {
+        # Compute new numerator and denominator
+        numerator <- e1@numerator * e2@denominator - e2@numerator * e1@denominator
+        denominator <- e1@denominator * e2@denominator
+        simplify(createRational(numerator, denominator)) # Simplify the result
+    }
+)
+
+# Multiplication of two rational numbers
+setMethod(
+    "*",
+    c("rational", "rational"),
+    function(e1, e2) {
+        # Compute new numerator and denominator
+        numerator <- e1@numerator * e2@numerator
+        denominator <- e1@denominator * e2@denominator
+        simplify(createRational(numerator, denominator)) # Simplify the result
+    }
+)
+
+# Division of two rational numbers
+setMethod(
+    "/",
+    c("rational", "rational"),
+    function(e1, e2) {
+        if (e2@numerator == 0) stop("Error: Cannot divide by zero.") # Handle division by zero
+        # Compute new numerator and denominator
+        numerator <- e1@numerator * e2@denominator
+        denominator <- e1@denominator * e2@numerator
+        simplify(createRational(numerator, denominator)) # Simplify the result
+    }
+)
+```
+
+```{r}
+#' Compute the Decimal Value of a Rational Number
+#'
+#' This function computes the decimal (quotient) representation of a rational number.
+#' Optionally, the decimal value can be rounded to a specified number of digits.
+#'
+#' @param r A rational number
+#' @param digits An optional non-negative integer specifying the number of decimal places
+#'   to round the quotient to. If `NULL`, the quotient is returned without rounding.
+#'
+#' @return The decimal representation of the rational number as a numeric value.
+#'   If `digits` is specified, the rounded value is returned.
+#'
+#' @details
+#' - If `digits` is not specified (`NULL`), the function returns the exact decimal value of the rational number.
+#' - If `digits` is specified, it must meet the following conditions:
+#'   1. Be a numeric value.
+#'   2. Be a non-negative integer.
+#'   3. Decimal and negative values for `digits` are not allowed.
+#' - Any invalid `digits` argument will trigger an error.
+#'
+#'
+# Function to compute the decimal (quotient) of a rational number
+quotient <- function(r, digits = NULL) {
+    value <- r@numerator / r@denominator # Compute the decimal value
+    if (!is.null(digits)) {
+        # Validate the 'digits' argument
+        # Ensure 'digits' is numeric, avoid errors caused by passing non-numeric types like strings or logical values
+        # Ensure 'digits' is an integer, non-integers are ambiguous and undefined
+        # Ensure 'digits' is non-negative, Decimal places cannot be negative as it would not make logical sense
+        if (!is.numeric(digits) || digits != as.integer(digits) || digits < 0) {
+            stop("Error: 'digits' must be a non-negative integer.")
+        }
+        return(format(value, digits = digits))  # Return the formatted value directly
+    }
+    return(value)  # Return the unrounded value
+}
+```
+
+b\. Use your `rational` class to create three objects:
+
+-   `r1`: 24/6
+
+-   `r2`: 72/30
+
+-   `r3`: 0/4
+
+```{r}
+r1 <- createRational(24, 6)   # Represents 24 / 6
+r2 <- createRational(7, 230)  # Represents 7 / 230
+r3 <- createRational(0, 4)    # Represents 0 / 4
+```
+
+```{r}
+r1
+r3
+r1 + r2
+r1 - r2
+r1 * r2
+r1 / r2
+r1 + r3
+r1 * r3
+r2 / r3
+quotient(r1)
+quotient(r2)
+quotient(r2, digits = 3)
+quotient(r2, digits = 3.14)
+quotient(r2, digits = "avocado")
+q2 <- quotient(r2, digits = 3)
+q2
+quotient(r3)
+simplify(r1)
+simplify(r2)
+simplify(r3)
+```
+
+c\. Show that your validator does not allow the creation of rational’s with 0 denominator, and check other malformed input to your constructor.
+
+Note that there are a lot of choices to be made here. How are you going to store the class? Two numerics? A vector of length two? A formula? A string? What are users going to pass into the constructor? A string (“24/6”)? Two arguments? A vector?
+
+There is no right answer to those questions. Make the best decision you can, and don’t be afraid to change it if your decision causes unforeseen difficulties.
+
+You may not use any existing R functions or packages that would trivialize this assignment. (E.g. if you found an existing package that does this, or found a function that automatically produces the quotient or simplified version, that is not able to be used.)
+
+Hint: It may be useful to define other functions that I don’t explicitly ask for.
+
+```{r}
+# Case 1: Valid numeric inputs
+createRational(24, 6) # Should simplify to 4/1
+
+# Case 2: Invalid numeric input: Zero denominator
+createRational(24, 0) # Expect: "Error: Denominator cannot be zero."
+
+# Case 3: Missing numerator or denominator
+createRational(24)  # Should throw an error due to missing arguments: "Error in createRational: argument is missing, with no default."
+createRational()    # Should throw an error due to missing arguments: "Error in createRational: argument is missing, with no default."
+
+# Case 4: Empty vector
+empty_vec <- c()
+createRational(empty_vec[1], empty_vec[2])  # Should throw "Error: Missing numerator or denominator."
+
+# Case 5: Non-numeric vector
+createRational("24", "6")  # Should throw "Error: Both numerator and denominator must be numeric."
+createRational(24, "six")  # Should throw "Error: Both numerator and denominator must be numeric."
+
+# Case 6: Negative denominator
+createRational(5, -3) # should simplify to a positive denominator
+
+# Case 7: Numerator is zero
+createRational(0, 10) # should simplify to 0/10
+
+# Case 8: Division by zero rational number
+r4 <- createRational(1, 2)
+r5 <- createRational(0, 1) # This rational number represents 0
+r4 / r5 # Expect: "Error: Cannot divide by zero."
+
+# Case 9: Invalid 'digits' argument
+# non-integer
+quotient(createRational(1, 3), digits = "three")  # Expect: "Error: 'digits' must be a non-negative integer."
+
+# negative integer
+quotient(createRational(1, 3), digits = -1)  # Expect: "Error: 'digits' must be a non-negative integer."
+```
+
+## Problem 2
+
+Let’s revisit the art data from the last problem set. Use **plotly** for these.
+
+```{r}
+library(tidyverse)
+#install.packages("plotly")
+library(plotly)
+art_sales <- read_csv("~/Downloads/df_for_ml_improved_new_market.csv")
+```
+
+a.  Regenerate your plot which addresses the second question from last time:
+
+    ii. Does the distribution of genre of sales across years appear to change?
+
+    You may copy your plot from last time, or copy my plot from the solutions, or come up with your own new plot.
+
+```{r}
+# Data preperation
+# Add Genre___Multiple column
+art_sale1 <- art_sales %>%
+  mutate(Genre___Multiple = if_else(
+    Genre___Photography + Genre___Print + Genre___Sculpture + Genre___Painting + Genre___Others > 1,
+    1, # If an artwork falls into more than one genre, set 'Genre___Multiple' to 1
+    0 # Otherwise, set it to 0
+  ))
+
+
+# Transform the genre columns into a long format for easier analysis
+art_genres <- art_sale1 %>% 
+              pivot_longer(cols = starts_with("Genre___"), # Select all columns that start with "Genre___"
+                           names_to = "genre", # Create a new column called 'genre' to store genre names
+                           values_to = "is_genre" ) %>% # Create a new column called 'is_genre' to indicate genre presence
+              filter(is_genre == 1) %>% # Filter to keep only rows where a genre is present
+              mutate(genre = gsub("Genre___", "", genre)) # Remove the "Genre___" prefix for cleaner genre names
+art_genres
+```
+
+```{r}
+# The plot from last problem set, using ggplot
+ggplot(art_genres, aes(x = factor(year), fill = genre)) +
+  geom_bar(position = "stack", alpha = .75) + # Use stacked bars to show genre proportions within each year and add transparency with alpha = 0.75
+  labs(title = "Distribution of Art Sales Genres Over Time",
+       x = "Year",
+       y = "Count of Sales",
+       fill = "Genre") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels for better readability
+        plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+```{r}
+# Create a stacked bar chart with plotly
+plotly_genre_plot <- art_genres %>%
+  count(year, genre) %>%  # Aggregate counts for each year and genre
+  plot_ly(
+    x = ~factor(year),  # Use year on the x-axis (converted to factor for categorical grouping)
+    y = ~n,             # Use count on the y-axis
+    color = ~genre,     # Use genre to define colors
+    type = "bar",       # Create a bar chart
+    text = ~paste("Genre:", genre, "<br>Year:", year, "<br>Count:", n),  # Add hover text
+    hoverinfo = "text"  # Show only custom hover text
+  ) %>%
+  layout(
+    title = "Distribution of Art Sales Genres Over Time",
+    barmode = "stack",  # Stack the bars to show proportions
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Count of Sales"),
+    legend = list(title = list(text = "Genre"))
+  )
+
+plotly_genre_plot
+```
+
+This stacked bar chart shows the distribution of art sales across genres over time. Overall, the total count of sales has grown steadily, with a sharp increase around 2011–2012. Photography consistently dominates the genre distribution, contributing significantly to sales in most years. Sculpture and Print also maintain notable shares, especially during the later years. The growth in the Others and Multiple categories towards the end of the timeline suggests diversification in genres or a broader categorization of artworks in recent years. This trend reflects both increasing sales activity and shifts in genre popularity over time.
+
+b\. Generate an interactive plot with **plotly** that can address both of these questions from last time:
+
+i.  Is there a change in the sales price in USD over time?
+
+ii. How does the genre affect the change in sales price over time?
+
+This should be a single interactive plot, with which a user can manipulate the view to be able to look at change over time overall, or by genre.
+
+```{r}
+# Prepare data for average sales price by year and genre
+avg_sales_by_genre <- art_genres %>%
+                      group_by(year, genre) %>%
+                      summarize(avg_price = mean(price_usd, na.rm = TRUE), .groups = "drop")
+```
+
+```{r}
+# Create the interactive plot
+interactive_plot <- plot_ly(
+  data = avg_sales_by_genre,
+  x = ~year,                # Year on the x-axis
+  y = ~avg_price,           # Average price on the y-axis
+  color = ~genre,           # Different colors for genres
+  type = "scatter",         # Create a scatter plot
+  mode = "lines+markers",   # Add both lines and markers for better visibility
+  text = ~paste("Genre:", genre, "<br>Year:", year, "<br>Avg Price:", round(avg_price, 2)), # Hover text
+  hoverinfo = "text"        # Display only custom hover text
+) %>%
+  layout(
+    title = "Change in Sales Price Over Time by Genre",
+    xaxis = list(title = "Year"),
+    yaxis = list(title = "Average Price (USD)"),
+    legend = list(title = list(text = "Genre"))
+  )
+
+interactive_plot
+
+```
+
+The interactive plot reveals that average sales prices across art genres have fluctuated significantly over time, with a notable peak between 2005 and 2010, followed by a decline and stabilization post-2010. Photography experienced the most dramatic spikes, particularly around 2007–2009, likely driven by high-value sales, before declining sharply. Print and Sculpture show steady growth until 2007, after which prices slightly decline or stabilize, while Painting exhibits consistent pricing trends throughout the timeline. The Multiple and Others categories display sporadic peaks but lack consistent trends. These patterns suggest a dynamic market during the mid-2000s, potentially influenced by increased demand, high-profile sales, or external economic factors.
+
+## Problem 3
+
+Repeat [problem set 4, question 1](https://dept.stat.lsa.umich.edu/~jerrick/courses/stat506_f24/ps4.html#problem-1---tidyverse), using **data.table**.
+
+```{r}
+library(nycflights13)
+library(data.table)
+```
+
+a.  Generate a table (which can just be a nicely printed tibble) reporting the mean and median departure delay per airport. Generate a second table (which again can be a nicely printed tibble) reporting the mean and median arrival delay per airport. Exclude any destination with under 10 flights. Do this exclusion through code, not manually.
+
+    Additionally,
+
+    -   Order both tables in descending mean delay.
+
+    -   Both tables should use the airport *names* not the airport *codes*.
+
+    -   Both tables should print all rows.
+
+```{r}
+flights_dt <- as.data.table(flights)
+airports_dt <- as.data.table(airports)
+```
+
+```{r}
+# Calculate departure delays
+depart_delay <- flights_dt[
+  !is.na(dep_delay), # Exclude rows where dep_delay is NA
+  .(
+    mean_dep_delay = mean(dep_delay, na.rm = TRUE), # Mean departure delay
+    median_dep_delay = median(dep_delay, na.rm = TRUE), # Median departure delay
+    num_flight = .N # Count flights
+  ),
+  by = origin # Group by origin airport
+][
+  num_flight >= 10 # Keep only origins with at least 10 flights
+][
+  airports_dt, on = .(origin = faa) # Join with airport names
+][
+  !is.na(name) # Ensure airport names are not NA after the join
+][
+  order(-mean_dep_delay) # Order by descending mean departure delay
+][
+  , .(dept_name = name, mean_dep_delay, median_dep_delay) # Select relevant columns
+]
+
+# Remove any rows with NA values explicitly
+depart_delay <- depart_delay[complete.cases(depart_delay)]
+
+print(depart_delay)
+
+```
+
+```{r}
+# Calculate arrival delays
+arrival_delay <- flights_dt[
+  !is.na(arr_delay), # Exclude rows where arr_delay is NA
+  .(
+    mean_arr_delay = mean(arr_delay, na.rm = TRUE), # Mean arrival delay
+    median_arr_delay = median(arr_delay, na.rm = TRUE), # Median arrival delay
+    num_flight = .N # Count flights
+  ),
+  by = dest # Group by destination airport
+][
+  num_flight >= 10 # Keep only destinations with at least 10 flights
+][
+  airports_dt, on = .(dest = faa) # Join with airport names
+][
+  !is.na(name) # Ensure airport names are not NA after the join
+][
+  order(-mean_arr_delay) # Order by descending mean arrival delay
+][
+  , .(arr_name = name, mean_arr_delay, median_arr_delay) # Select relevant columns
+]
+
+# Remove any rows with NA values explicitly
+arrival_delay <- arrival_delay[complete.cases(arrival_delay)]
+
+print(arrival_delay)
+
+```
+
+```{r}
+planes_dt <- as.data.table(planes)
+
+# Calculate flight speed and join flights with planes
+new_flights <- flights_dt[
+  !is.na(air_time) & !is.na(distance), # Exclude rows with missing air_time or distance
+  flight_speed := distance / (air_time / 60) # Calculate flight speed (MPH)
+][
+  planes_dt, on = "tailnum", nomatch = 0 # Join with planes dataset on tailnum
+]
+
+# Calculate average speed and flight count for each model
+fastest_model <- new_flights[
+  , .(
+    avg_speed = mean(flight_speed, na.rm = TRUE), # Calculate average speed for the model
+    flights_cnt = .N # Count the number of flights for the model
+  ),
+  by = model # Group by model
+][
+  order(-avg_speed) # Order by descending average speed
+][
+  1 # Select the row with the highest average speed
+]
+
+print(fastest_model)
+
+```
