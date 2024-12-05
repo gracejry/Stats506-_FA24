@@ -1,0 +1,315 @@
+---
+title: "506 hw6"
+author: "Ruyue Jiang"
+format:
+  html:
+    embed-resources: true
+editor: visual
+---
+
+repo link: <https://github.com/gracejry/Stats506-_FA24.git>
+
+## Problem 1
+
+If a sample has a categorical variable with small groups, bootstrapping can be tricky. Consider a situation where `n = 100`, but there is some categorical variable `g` where category `g = 1` has only 2 observations. In a single bootstrap resample of that data, there is a
+
+$$
+(\frac{98}{100})^{100} \approx 13 \%
+$$
+
+chance that the bootstrap sample does not include either observation from `g = 1`. This implies that if we are attempting to obtain a bootstrap estimate in group `g = 1`, 13% of the bootstrapped samples will have no observations from that group and thus unable to produce an estimate.
+
+A way around this is to carry out stratified bootstrap: Instead of taking a sample with replacement of the whole sample, take separate bootstrap resamples within each strata, then combine those resamples to generate the bootstrap sample.
+
+Use the [“lahman” data that we first introduced in sql](https://dept.stat.lsa.umich.edu/~jerrick/courses/stat506_f24/07-sql.html#lahman-example). In the statistical analysis of baseball statistics, one metric used to measure a players performance is their [Range Factor](https://en.wikipedia.org/wiki/Range_factor):
+
+$$
+RF = 3 \frac{PO+A}{InnOuts}
+$$
+
+Here, “PO” is put outs, “A” is assists”, and “innouts” is the number of outs they were on the field for.
+
+```{r}
+library(dplyr)
+library(parallel)
+library(future)
+library(Lahman)
+library(microbenchmark)
+#install.packages("future.apply")
+library(purrr)
+library(future.apply)
+data("Fielding")
+```
+
+```{r}
+#' Data Cleaning and Preprocessing
+#' 
+#' This step cleans the `Fielding` dataset by removing missing or invalid values and calculating the Range Factor (RF).
+#' RF is calculated as 3 * (PO + A) / InnOuts, where PO is put-outs, A is assists, and InnOuts is innings played.
+#' 
+#' @return A cleaned dataset (`fielding_data`) with calculated RF.
+#' 
+# Data cleaning and RF calculation
+fielding_data <- Fielding %>%
+  # Remove missing values in key fields
+  filter(!is.na(InnOuts), !is.na(PO), !is.na(A)) %>%
+  # Ensure positive innings played
+  filter(InnOuts > 0) %>%
+  # Remove potential data entry errors
+  filter(PO >= 0, A >= 0) %>%
+  # Calculate RF
+  mutate(RF = 3 * (PO + A) / InnOuts)
+
+
+#' Calculate Average RF for Each Team
+#' 
+#' This step groups the cleaned data by team and calculates the average Range Factor (RF) for each team.
+#' The teams are sorted in descending order of average RF.
+#' 
+#' @param fielding_data The cleaned dataset with calculated RF.
+#' @return A data frame (`team_RF`) with team IDs and their average RF values.
+#' 
+# Calculate average RF for each team
+team_RF <- fielding_data %>%
+  group_by(teamID) %>%
+  summarise(
+    average_RF = mean(RF, na.rm = TRUE), # Compute mean RF per team
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(average_RF)) # Sort teams by highest average RF
+
+print(team_RF)
+
+#' Stratified Bootstrap Function
+#' 
+#' This function performs a stratified bootstrap, resampling data within each group while maintaining group proportions.
+#' 
+#' @param data A data frame to perform stratified bootstrap on.
+#' @param group_var The column name representing the grouping variable.
+#' @return A resampled data frame with the same structure as the original data.
+#' 
+# Define stratified bootstrap function
+stratified_bootstrap <- function(data, group_var) {
+  data %>%
+    group_by(!!sym(group_var)) %>% # Group by the specified variable
+    slice_sample(prop = 1, replace = TRUE) %>% # Resample within each group
+    ungroup() # Remove grouping
+}
+
+
+# Set parameters
+set.seed(506) # Set seed for reproducibility
+n_bootstrap <- 1000 # Define number of bootstrap iterations
+
+```
+
+a\. Calculate the average RF for each team in the Fielding table. Then, since we don’t have a closed form for the standard deviation of this statistic, carry out a stratified bootstrap **by team** to estimate it. Do this out three ways:
+
+1.  Without any parallel processing
+
+2.  Using parallel processing with the `parallel` package.
+
+3.  Using futures with the `future` package.
+
+Generate at least 1,000 bootstrapped samples for each approach.
+
+```{r}
+#' Sequential Bootstrap Analysis
+#' 
+#' The bootstrap is done without parallel processing, iterating over `n_bootstrap` samples. 
+#' After bootstrapping, the top 10 teams with the highest RF are selected based on their average RF.
+#' 
+#' @param fielding_data The cleaned dataset with calculated RF values.
+#' @param n_bootstrap The number of bootstrap samples to generate.
+#' @return A data frame (`boot_results_seq`) containing the top 10 teams with their average RF and standard error.
+#' 
+# Sequential bootstrap (top 10 teams)
+boot_results_seq <- map(1:n_bootstrap, ~{
+  # Perform stratified bootstrap resampling
+  boot_data <- stratified_bootstrap(fielding_data, "teamID")
+  
+  # Calculate mean RF for each team in the bootstrap sample
+  boot_data %>%
+    group_by(teamID) %>%
+    summarise(mean_RF = mean(RF, na.rm = TRUE), .groups = 'drop')
+}) %>%
+  # Combine all bootstrap samples into one data frame
+  bind_rows() %>%
+  # Aggregate results to calculate mean RF and standard error across bootstrap samples
+  group_by(teamID) %>%
+  summarise(
+    RF_seq = mean(mean_RF),  # Average RF across bootstrap samples
+    SE_seq = sd(mean_RF), # Standard error of RF
+    .groups = 'drop'
+  ) %>%
+  # Sort teams by highest RF
+  arrange(desc(RF_seq)) %>%
+  # Select top 10 teams
+  slice_head(n = 10)
+
+print(boot_results_seq)
+
+```
+
+```{r}
+#' Parallel Bootstrap Analysis
+#' 
+#' It uses the `parallel` package to distribute the bootstrap computations across multiple CPU cores.
+#' After bootstrapping, the top 10 teams with the highest RF are selected based on their average RF.
+#' 
+#' @param fielding_data The cleaned dataset with calculated RF values.
+#' @param n_bootstrap The number of bootstrap samples to generate.
+#' @param n_cores The number of CPU cores to use for parallel processing.
+#' @return A data frame (`boot_results_par`) containing the top 10 teams with their average RF and standard error.
+#' 
+# Set up the cluster
+n_cores <- detectCores() - 1 # Use all but one core to avoid overloading
+cl <- makeCluster(n_cores) # Create a cluster with the specified number of cores
+
+# Export necessary functions and data to the cluster
+clusterExport(cl, c("stratified_bootstrap", "fielding_data"))
+
+# Load the required libraries on each worker (suppress output)
+invisible(clusterEvalQ(cl, library(dplyr)))
+
+# Perform the parallel bootstrap computation
+boot_results_par <- parLapply(cl, 1:n_bootstrap, function(x) {
+  # Perform stratified bootstrap within each worker
+  boot_data <- stratified_bootstrap(fielding_data, "teamID")
+  # Calculate mean RF for each team in the bootstrap sample
+  boot_data %>%
+    group_by(teamID) %>%
+    summarise(mean_RF = mean(RF, na.rm = TRUE), .groups = 'drop')  # Calculate mean RF
+}) %>%
+  # Combine all bootstrap samples into one data frame
+  bind_rows() %>%
+  # Aggregate results to calculate mean RF and standard error across bootstrap samples
+  group_by(teamID) %>%
+  summarise(
+    RF_par = mean(mean_RF), # Average RF across bootstrap samples
+    SE_par = sd(mean_RF), # Standard error of RF
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(RF_par)) %>%  # Sort by RF_par
+  slice_head(n = 10)  # Select top 10 teams
+
+# Stop the cluster
+stopCluster(cl)
+
+# Display the top 10 teams
+print(boot_results_par)
+
+```
+
+```{r}
+#' Future-Based Bootstrap Analysis
+#' 
+#' It uses the `future` and `future.apply` packages to distribute bootstrap computations across multiple workers.
+#' After bootstrapping, the top 10 teams with the highest RF are selected based on their average RF.
+#' 
+#' @param fielding_data The cleaned dataset with calculated RF values.
+#' @param n_bootstrap The number of bootstrap samples to generate.
+#' @param n_cores The number of CPU cores to use for future-based parallel processing.
+#' @return A data frame (`boot_results_fut`) containing the top 10 teams with their average RF and standard error.
+#' 
+# Set up the future plan
+plan(multisession, workers = n_cores)
+
+# Perform future-based bootstrap
+boot_results_fut <- future_lapply(
+  1:n_bootstrap, # Loop over the number of bootstrap samples
+  function(i) {
+    set.seed(123 + i)  # Explicitly set a unique seed for each iteration
+    # Perform stratified bootstrap for each iteration
+    boot_data <- stratified_bootstrap(fielding_data, "teamID")
+    # Calculate mean RF for each team in the bootstrap sample
+    boot_data %>%
+      group_by(teamID) %>%
+      summarise(mean_RF = mean(RF, na.rm = TRUE), .groups = 'drop')
+  },
+  future.seed = TRUE  # Ensure parallel-safe random number generation
+) %>%
+  bind_rows() %>%  # Combine results
+  # Aggregate results to calculate mean RF and standard error across bootstrap samples
+  group_by(teamID) %>%
+  summarise(
+    RF_fut = mean(mean_RF),  # Average RF across bootstrap samples
+    SE_fut = sd(mean_RF), # Standard error of RF
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(RF_fut)) %>%  # Sort by RF_fut
+  slice_head(n = 10)  # Select top 10 teams
+
+# Print the results
+print(boot_results_fut)
+
+```
+
+b\. Generate a table showing the estimated RF and associated standard errors *for the teams with the 10 highest RF* from the three approaches
+
+```{r}
+# Combine results
+final_results <- team_RF %>%
+  left_join(boot_results_seq, by = "teamID") %>%
+  left_join(boot_results_par, by = "teamID") %>%
+  left_join(boot_results_fut, by = "teamID") %>%
+  arrange(desc(average_RF)) %>%
+  slice_head(n = 10)
+
+# Top 10 teams
+print(final_results)
+
+```
+
+c\. Report and discuss the performance difference between the versions.
+
+```{r}
+#' Benchmark Bootstrap Methods
+#' 
+#' This step benchmarks the performance of Sequential, Parallel, and Future-based bootstrapping methods
+#' using the `microbenchmark` package. Each method runs 100 bootstrap samples, and the execution time 
+#' is measured across 5 iterations for comparison.
+#' 
+#' @param fielding_data The cleaned dataset with calculated RF values.
+#' @param stratified_bootstrap The function performing stratified resampling within each group.
+#' @param n_cores The number of CPU cores to use for Parallel and Future methods.
+#' @param n_bootstrap The number of bootstrap samples to generate for each method.
+#' @return A `microbenchmark` object showing the runtime statistics for each method.
+#' 
+
+mb_results <- microbenchmark(
+  # Sequential bootstrap
+  Sequential = {
+    # Perform 100 bootstrap samples sequentially
+    map(1:100, ~stratified_bootstrap(fielding_data, "teamID")) %>% bind_rows()
+  },
+  
+  # Parallel bootstrap
+  Parallel = {
+    # Set up the parallel cluster
+    cl <- makeCluster(detectCores() - 1) # Use all but one core
+    clusterExport(cl, c("stratified_bootstrap", "fielding_data"))
+    clusterEvalQ(cl, library(dplyr)) # Ensure workers load the necessary library
+    # Perform 100 bootstrap samples in parallel
+    parLapply(cl, 1:100, function(x) stratified_bootstrap(fielding_data, "teamID")) %>%
+      bind_rows()
+    stopCluster(cl) # Stop the cluster to release resources
+  },
+  
+  # Future-based bootstrap
+  Future = {
+    # Perform 100 bootstrap samples using future-based parallelism
+    future_lapply(1:100, 
+                  function(i) stratified_bootstrap(fielding_data, "teamID"), # Perform stratified bootstrap
+                  future.seed = TRUE) %>% # Ensure parallel-safe random number generation
+      bind_rows()
+  },
+  times = 5 # Number of times to repeat each method for benchmarking
+)
+
+# Print the benchmarking results
+print(mb_results)
+
+```
+
+The performance comparison of the Sequential, Parallel, and Future methods highlights key differences in efficiency. The Sequential method is the fastest and most consistent, as it avoids the overhead associated with parallelization, making it ideal for smaller workloads. The Future method provides a good balance between scalability and efficiency, outperforming the Parallel method by better managing worker nodes and reducing overhead. The Parallel method, while utilizing multiple CPU cores, incurs significant setup and communication overhead, making it less efficient for smaller tasks. For this workload, the Sequential method is the most suitable, while the Future method is better suited for larger datasets or more extensive bootstrapping, with the Parallel method recommended only for very large-scale computations.
