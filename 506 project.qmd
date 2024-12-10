@@ -1,0 +1,480 @@
+---
+title: "506 Final Project"
+author: "Ruyue Jiang"
+output: 
+  html_document:
+    self_contained: true
+editor: visual
+execute:
+  error: true
+---
+
+### Import data
+
+```{r}
+# install.packages("SAScii")
+# install.packages("readr")
+library(tidyverse)
+library(plotly) ## For interactive visualization
+library(SAScii)
+library(readr)
+library(RColorBrewer)
+library(car)
+```
+
+```{r}
+# Set the working directory
+setwd("~/Desktop/506")
+
+# Define file paths (no need for full paths since working directory is set)
+fem_resp_data_path <- "2017_2019_FemRespData.dat"
+fem_resp_setup_path <- "2017_2019_FemRespSetup.sas"
+male_data_path <- "2017_2019_MaleData.dat"
+male_setup_path <- "2017_2019_MaleSetup.sas"
+
+# Function to process NSFG data
+process_nsfg_data <- function(data_path, setup_path) {
+  # Suppress warnings when parsing the SAS setup file
+  sas_positions <- suppressWarnings(parse.SAScii(setup_path))
+  
+  # Ensure column names are lowercase for consistency
+  sas_positions[ , 'varname' ] <- tolower(sas_positions[ , 'varname' ])
+  
+  # Assign column types based on whether they are character or numeric
+  sas_positions[ , 'column_types' ] <- ifelse(sas_positions[ , 'char' ], "c", "d")
+  
+  # Read the fixed-width data file using the parsed column positions
+  nsfg_tbl <- read_fwf(
+    data_path,
+    fwf_widths(abs(sas_positions[ , 'width' ]), col_names = sas_positions[ , 'varname' ]),
+    col_types = paste0(sas_positions[ , 'column_types' ], collapse = ""),
+    na = c("", ".") # Treat empty strings and '.' as missing values
+  )
+  
+  # Convert the tibble to a data frame for easier handling
+  nsfg_df <- data.frame(nsfg_tbl)
+  
+  return(nsfg_df)
+}
+
+# Process the female dataset
+female_raw <- process_nsfg_data(fem_resp_data_path, fem_resp_setup_path)
+
+# Process the male dataset
+male_raw <- process_nsfg_data(male_data_path, male_setup_path)
+
+```
+
+After checking with the size of the data on the website, data are consistent with the website data.
+
+### Data Cleaning
+
+```{r}
+# Clean and rename female data
+female_data <- female_raw %>%
+  select(caseid, ager, hieduc, timescoh, timesmar, rwant) %>%
+  filter(!is.na(ager) & !is.na(hieduc) & !is.na(timescoh) & !is.na(rwant)) %>%
+  rename(
+    id = caseid,  # Respondent unique id number
+    age = ager,  # Respondent's age at the time of the interview
+    highest_education = hieduc,  # Highest level of education completed
+    cohabitation_num = timescoh,  # Number of cohabitation times
+    marriage_num = timesmar,  # Number of marriages
+    fertility_intention = rwant  # Intention to have children at some time
+  )
+
+# Clean and rename male data
+male_data <- male_raw %>%
+  select(caseid, ager, hieduc, timescoh, timesmar, rwant) %>%
+  filter(!is.na(ager) & !is.na(hieduc) & !is.na(timescoh) & !is.na(rwant)) %>%
+  rename(
+    id = caseid,  # Respondent unique id number
+    age = ager,  # Respondent's age at the time of the interview
+    highest_education = hieduc,  # Highest level of education completed
+    cohabitation_num = timescoh,  # Number of cohabitation times
+    marriage_num = timesmar,  # Number of marriages
+    fertility_intention = rwant  # Intention to have children at some time
+  )
+
+# Combine male and female data
+combined_data <- bind_rows(
+  female_data %>% mutate(gender = "Female"),
+  male_data %>% mutate(gender = "Male")
+)
+
+```
+
+```{r}
+data_final <- combined_data %>%
+  mutate(
+    # Recode age groups
+    age = case_when(
+      age < 20 ~ "15-19",
+      age >= 20 & age < 30 ~ "20-29",
+      age >= 30 & age < 40 ~ "30-39",
+      age >= 40 & age <= 50 ~ "40-50"
+    ),
+    # Recode the education level
+    highest_education = case_when(
+      highest_education %in% c(5, 6, 7, 8) ~ "Less than High School",
+      highest_education == 9 ~ "High School Graduate",
+      highest_education %in% c(10, 11) ~ "College/Associate Degree",
+      highest_education == 12 ~ "Bachelor's Degree",
+      highest_education == 13 ~ "Master's Degree",
+      highest_education == 14 ~ "Doctorate Degree",
+      highest_education == 15 ~ "Professional Degree"
+    ),
+    # Recode number of cohabitations
+    cohabitation_num = case_when(
+      cohabitation_num == 0 ~ "0",
+      cohabitation_num == 1 ~ "1",
+      cohabitation_num == 2 ~ "2",
+      cohabitation_num == 3 ~ "3",
+      cohabitation_num == 4 ~ "4",
+      cohabitation_num >= 5 ~ "5"
+    ),
+    # Recode number of marriages
+    marriage_num = case_when(
+      is.na(marriage_num) ~ "0",
+      marriage_num == 1 ~ "1",
+      marriage_num == 2 ~ "2",
+      marriage_num == 3 ~ "3",
+      marriage_num == 4 ~ "4",
+      marriage_num >= 5 ~ "5"
+    ),
+    # Recode fertility intentions
+    fertility_intention = case_when(
+      fertility_intention == 1 ~ "Yes",
+      fertility_intention == 5 ~ "No",
+      fertility_intention == 8 ~ "Refused",
+      fertility_intention == 9 ~ "Don't Know"
+    )
+  ) %>%
+  mutate(
+    marriage_num = as.numeric(as.character(marriage_num)),
+    cohabitation_num = as.numeric(as.character(cohabitation_num)),
+    fertility_intention_numeric = ifelse(fertility_intention == "Yes", 1, 0)
+  )
+
+```
+
+### Analysis
+
+```{r}
+# Summarize rates based on cohabitation, marriage, and fertility intention
+rate_summary <- data_final %>%
+  group_by(gender, age, highest_education) %>%
+  summarize(
+    cohabitation_rate = mean(cohabitation_num != "0", na.rm = TRUE), # Calculate cohabitation rate
+    marriage_rate = mean(marriage_num != "0", na.rm = TRUE), # Calculate marriage rate
+    fertility_intention_rate = mean(fertility_intention == "Yes", na.rm = TRUE), # Calculate fertility intention rate
+    count = n(), # Count the number of observations
+    .groups = "drop" # Drop grouping after summarization
+  )
+
+# View the summarized data
+print(rate_summary)
+
+```
+
+```{r}
+# Reshape the summarized data for visualization
+rate_summary_long <- rate_summary %>%
+  pivot_longer(
+    cols = c(cohabitation_rate, marriage_rate, fertility_intention_rate),
+    names_to = "rate_type", # New column for rate types
+    values_to = "rate" # New column for rate values
+  ) %>%
+  mutate(highest_education = factor(highest_education, levels = c(
+    "Less than High School",
+    "High School Graduate",
+    "College/Associate Degree",
+    "Bachelor's Degree",
+    "Master's Degree",
+    "Doctorate Degree",
+    "Professional Degree"
+  )))
+
+# Plotting cohabitation, marriage, and fertility intention rates by gender and education
+ggplot(rate_summary_long, aes(x = age, y = rate, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_grid(
+    factor(rate_type, levels = c("cohabitation_rate", "fertility_intention_rate", "marriage_rate"), 
+           labels = c("Cohabitation", "Intention", "Marriage")) ~ highest_education,
+    scales = "free_y", 
+    space = "free"
+  ) +
+  scale_fill_manual(values = c("Female" = "pink1", "Male" = "lightblue2")) +
+  labs(
+    title = "Cohabitation, Marriage, and Fertility Intention Rates by Gender and Education",
+    subtitle = "Figure 1",
+    x = "Age",
+    y = "Rate",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 6, margin = margin(t = 5, b = 5)),  # Adjust facet text size
+    axis.text.x = element_text(size = 8, angle = 45, hjust = 1),  # Rotate x-axis labels
+    legend.position = "bottom",
+    legend.text = element_text(size = 8)  # Adjust legend text size
+  )
+
+
+```
+
+This chart provides a detailed visualization of how cohabitation rates, marriage rates, and fertility intention rates vary across gender, age, and educational attainment.
+
+Cohabitation Rate:
+
+-   Gender: The cohabitation rates for males and females are very similar, showing minimal gender differences across education levels and age groups.
+
+-   Education Level: Individuals with lower education levels exhibit higher cohabitation rates compared to those with higher degrees. This suggests that lower education levels may be associated with a greater tendency toward cohabitation.
+
+-   Age: Cohabitation rates are most prominent among individuals aged 20–39, regardless of education level. This reflects the life stage when cohabitation is more likely, possibly due to exploring relationships or balancing career and personal commitments.
+
+Fertility Intention Rate:
+
+-   Gender: Females consistently report higher fertility intention rates than males, especially in the younger age groups (15–29). This reflects a stronger inclination toward future childbearing among women during their peak reproductive years.
+
+-   Education Level: Fertility intentions are higher for individuals with lower education levels and lower for those with advanced degrees. This trend might indicate that individuals with higher education levels are more likely to delay or reconsider having children, possibly due to career aspirations or personal priorities.
+
+-   Age: Fertility intention rates peak in the 15–29 age range and decline sharply in older age groups (30–50), aligning with both biological and societal factors influencing family planning.
+
+Marriage Rate:
+
+-   Gender: The marriage rates for males and females are comparable across most education levels, with females showing slightly higher rates in the 20–29 and 30–39 age groups for certain education levels.
+
+-   Education Level: Individuals with higher education levelstend to report higher marriage rates, while those with lower education levels show relatively lower marriage rates. This suggests that education may contribute positively to marriage stability or likelihood.
+
+-   Age: Marriage rates increase steadily with age, peaking in the 40–50 age group. This pattern may reflect delayed marriage among those pursuing education or careers during their younger years.
+
+```{r}
+# Aggregate data for mean marriage frequency by cohabitation, gender, and age
+aggregated_data1 <- data_final %>%
+  group_by(cohabitation_num, gender, age) %>%
+  summarize(
+    mean_marriage = mean(marriage_num, na.rm = TRUE), # Calculate mean marriage frequency
+    .groups = "drop"
+  )
+
+# Plotting cohabitation and marriage rates by age and gender
+ggplot(aggregated_data1, aes(x = cohabitation_num, y = mean_marriage, color = gender, group = gender)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  facet_wrap(~age, ncol = 2) +
+  scale_color_manual(values = c("Female" = "pink1", "Male" = "lightblue2")) +
+  labs(
+    title = "Cohabitation and Marriage Rates by Age and Gender (Smoothed)",
+    subtitle = "Figure 2",
+    x = "Cohabitation Frequency",
+    y = "Average Marriage Frequency",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
+
+```
+
+This plot illustrates the relationship between cohabitation frequency and average marriage frequency, stratified by gender and age groups. Across most age groups, a general trend is observed where an increase in cohabitation frequency correlates with a rise in the average marriage frequency, indicating that individuals who cohabitate more often are more likely to experience multiple marriages. This relationship is particularly pronounced in older age groups (30-39 and 40-50), where the gap between genders becomes more noticeable as cohabitation frequency increases.
+
+For the younger age groups (15-19 and 20-29), the average marriage frequency remains low, reflecting a societal tendency for younger individuals to delay or avoid marriage altogether, even with higher cohabitation frequency. Interestingly, in the 40-50 age group, females demonstrate consistently higher marriage frequencies compared to males at higher levels of cohabitation, possibly indicating gendered differences in marital decisions or opportunities later in life. This pattern underscores the importance of considering both gender and age in understanding the dynamics between cohabitation and marriage rates.
+
+```{r}
+# Recode highest education as a factor for analysis
+data_final <- data_final %>%
+  mutate(
+    highest_education = factor(highest_education, levels = c(
+      "Less than High School",
+      "High School Graduate",
+      "College/Associate Degree",
+      "Bachelor's Degree",
+      "Master's Degree",
+      "Doctorate Degree",
+      "Professional Degree"
+    ))
+  )
+
+# Aggregate data for mean marriage frequency by education, gender, and cohabitation
+aggregated_data2 <- data_final %>%
+  group_by(highest_education, gender, cohabitation_num) %>%
+  summarize(mean_marriage_num = mean(marriage_num, na.rm = TRUE), .groups = "drop")
+
+# Plot of Cohabitation and Marriage Rates by Education Level and Gender
+ggplot(aggregated_data2, aes(x = cohabitation_num, y = mean_marriage_num, color = gender, group = gender)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Female" = "pink", "Male" = "lightblue")) +
+  facet_wrap(~highest_education, scales = "free_y", ncol = 3) +
+  labs(
+    title = "Cohabitation and Marriage Rates by Education Level and Gender",
+    subtitle = "Figure 3",
+    x = "Cohabitation Frequency",
+    y = "Average Marriage Frequency",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 10),
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+This plot illustrates the relationship between cohabitation frequency and average marriage frequency, stratified by education level and gender. Across most education levels, there is a generally positive association between cohabitation frequency and marriage frequency, with females typically exhibiting slightly higher average marriage frequencies compared to males at higher cohabitation levels. Notable deviations exist, such as among those with a Doctorate or Master's degree, where patterns fluctuate more significantly. For individuals with less than a high school education, the increase in marriage frequency plateaus at moderate cohabitation levels. These trends suggest that the dynamics of cohabitation and marriage differ by both gender and educational attainment, highlighting nuanced influences of these demographic factors on marriage behavior.
+
+```{r}
+# Prepare data for fertility intention plot
+fertility_plot_data <- rate_summary_long %>%
+  filter(rate_type == "fertility_intention_rate")
+
+# Create the fertility intention plot
+ggplot(data = fertility_plot_data,aes(x = age, y = rate, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ highest_education, scales = "free_y", ncol = 3) +
+  scale_fill_manual(values = c("Female" = "pink", "Male" = "lightblue")) +
+  labs(
+    title = "Proportion of Fertility Intentions by Age, Gender, and Education",
+    subtitle = "Figure 4",
+    x = "Age Group",
+    y = "Proportion with Positive Fertility Intention",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 8),
+    legend.position = "bottom"
+  )
+
+```
+
+The chart illustrates the proportion of individuals with positive fertility intentions across different age groups, genders, and educational levels. Overall, younger age groups (15–19 and 20–29) display higher fertility intentions across all educational levels, with females typically showing slightly higher proportions than males. This trend diminishes with increasing age, especially in the 40–50 age group, where fertility intentions drop significantly for both genders. Education level also plays a role: individuals with less than a high school education and high school graduates show higher fertility intentions in younger age groups compared to those with advanced degrees (e.g., Master's, Doctorate, or Professional degrees). Notably, among those with Bachelor's and Professional degrees, males exhibit fertility intentions comparable to or exceeding those of females in certain age ranges.
+
+```{r}
+# Plot fertility intention rates by education level and gender
+ggplot(data = rate_summary_long %>% filter(rate_type == "fertility_intention_rate"), 
+  aes(x = as.factor(age), y = rate, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ highest_education, scales = "free_y") +
+  scale_fill_manual(values = c("Female" = "pink", "Male" = "lightblue")) +
+  labs(
+    title = "Fertility Intention Rates by Education Level and Gender",
+    subtitle = "Figure 5",
+    x = "Age Group",
+    y = "Proportion with Fertility Intention",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(size = 8)
+  )
+
+```
+
+The chart shows fertility intention rates by education level, gender, and age group. Across all educational levels, younger age groups (15–19 and 20–29) exhibit higher fertility intentions, with a steady decline as age increases, especially in the 40–50 age group. For individuals with lower education levels (e.g., less than high school or high school graduate), fertility intentions are consistently higher across age groups compared to those with advanced degrees. Among individuals with professional, Master's, or Doctorate degrees, the highest fertility intentions are observed in the 20–29 age group, with males often showing comparable or slightly higher rates than females. This suggests a strong interplay between education, age, and gender in shaping fertility intentions, with higher education levels correlating to lower fertility intentions in later age groups.
+
+```{r}
+# Baseline model: main effects of cohabitation, gender, age, and education
+marriage_baseline_model <- lm(
+  marriage_num ~ cohabitation_num + gender + age + highest_education,
+  data = data_final
+)
+
+# Summary
+cat("\nBaseline Model for Marriage Numbers:\n")
+summary(marriage_baseline_model)
+
+```
+
+```{r}
+# Logistic regression for fertility intention (binary outcome)
+fertility_baseline_model <- glm(
+  fertility_intention_numeric ~ cohabitation_num + gender + age + highest_education,
+  family = binomial,
+  data = data_final
+)
+
+# Summary
+cat("\nBaseline Logistic Model for Fertility Intention:\n")
+summary(fertility_baseline_model)
+
+```
+
+```{r}
+# Prepare the correlation data by selecting relevant numeric variables
+correlation_data <- data_final %>%
+  select(
+    cohabitation_num,
+    marriage_num,
+    fertility_intention_numeric,  # Numeric version of fertility intention
+    age,                         # Categorical; convert to numeric
+    highest_education,           # Categorical; convert to numeric
+    gender                       # Categorical; convert to numeric
+  ) %>%
+  mutate(
+    age = as.numeric(factor(age, levels = c("15-19", "20-29", "30-39", "40-50"), ordered = TRUE)),
+    highest_education = as.numeric(factor(highest_education, ordered = TRUE)),
+    gender = ifelse(gender == "Male", 1, 0)  # 1 for Male, 0 for Female
+  )
+
+#' Calculate Correlations Between a Variable and Others
+#'
+#' This function computes the correlation between a specified variable 
+#' (Variable 1) and a list of other variables (Variable 2). The function returns
+#' a dataframe with the correlation coefficient and p-value for each pair.
+#'
+#' @param variable1 A string specifying the name of the primary variable 
+#' (Variable 1) in the correlation analysis.
+#' @param variables A character vector specifying the names of the other variables 
+#' (Variable 2) to be correlated with Variable 1.
+#'
+#' @return A dataframe with columns of variables and their correlations
+get_correlation_df <- function(variable1, variables) {
+  correlation_results <- lapply(variables, function(var) {
+    test <- cor.test(correlation_data[[variable1]], correlation_data[[var]], use = "complete.obs", method = "pearson")
+    data.frame(
+      Variable_1 = variable1,
+      Variable_2 = var,
+      Correlation = test$estimate,
+      P_Value = test$p.value
+    )
+  })
+  do.call(rbind, correlation_results)
+}
+
+# 1. Correlation dataframe for Number of Cohabitations
+cohabitation_correlations <- get_correlation_df(
+  "cohabitation_num",
+  c("marriage_num", "fertility_intention_numeric", "age", "highest_education", "gender")
+)
+
+# 2. Correlation dataframe for Number of Marriages
+marriage_correlations <- get_correlation_df(
+  "marriage_num",
+  c("cohabitation_num", "fertility_intention_numeric", "age", "highest_education", "gender")
+)
+
+# 3. Correlation dataframe for Fertility Intention
+fertility_correlations <- get_correlation_df(
+  "fertility_intention_numeric",
+  c("cohabitation_num", "marriage_num", "age", "highest_education", "gender")
+)
+
+# Combine all dataframes into a list for viewing
+correlation_results <- list(
+  Cohabitation_Correlations = cohabitation_correlations,
+  Marriage_Correlations = marriage_correlations,
+  Fertility_Correlations = fertility_correlations
+)
+
+correlation_results
+
+```
